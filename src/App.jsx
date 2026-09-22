@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import Game from './pages/Game'
+import PytonKnight from './pages/PytonKnight'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -27,6 +28,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Game />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/jogo"
+        element={
+          <ProtectedRoute>
+            <PytonKnight />
           </ProtectedRoute>
         }
       />

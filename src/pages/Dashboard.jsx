@@ -145,6 +145,24 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <Link
+          to="/jogo"
+          className="group mb-12 flex flex-col items-start justify-between gap-4 rounded-[14px] border border-[#2A332B] bg-ink p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_28px_-18px_rgba(22,29,24,0.55)] sm:flex-row sm:items-center"
+        >
+          <div>
+            <span className="mb-2 inline-block rounded-md bg-forest/20 px-2 py-[3px] font-mono text-[11px] text-amber">
+              JOGO
+            </span>
+            <h3 className="font-display text-lg font-semibold text-white">Pyton Knight</h3>
+            <p className="mt-1 max-w-md text-[13.5px] leading-[1.55] text-[#8B9A8E]">
+              Explore a masmorra do Livro Mágico e programe Guto em Python para resolver as 20 atividades.
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-forest px-5 py-2.5 text-[13px] font-semibold text-paper transition-colors group-hover:bg-forest-deep">
+            Jogar agora
+          </span>
+        </Link>
+
         <div className="mb-6">
           <h2 className="font-display text-[22px] font-bold text-ink">4 módulos</h2>
           <p className="mt-1 max-w-[460px] text-[14px] text-ink-soft">
