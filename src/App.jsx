@@ -4,7 +4,6 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
-import Game from './pages/Game'
 import PytonKnight from './pages/PytonKnight'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -23,14 +22,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/quest/:questId"
-        element={
-          <ProtectedRoute>
-            <Game />
-          </ProtectedRoute>
-        }
-      />
+      
       <Route
         path="/jogo"
         element={
