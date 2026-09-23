@@ -122,7 +122,7 @@ export default function Dashboard() {
             {loading ? 'Carregando...' : 'Sua jornada está só começando'}
           </h1>
           <p className="max-w-[520px] text-[15px] text-ink-soft">
-            Complete a QUEST 01 para desbloquear a próxima. Cada desafio resolvido soma XP e fica salvo na sua conta.
+            Complete a Quest 01 para desbloquear a próxima. Cada desafio resolvido soma XP e fica salvo na sua conta.
           </p>
         </div>
 
@@ -163,18 +163,7 @@ export default function Dashboard() {
           </span>
         </Link>
 
-        <div className="mb-6">
-          <h2 className="font-display text-[22px] font-bold text-ink">4 módulos</h2>
-          <p className="mt-1 max-w-[460px] text-[14px] text-ink-soft">
-            Cada módulo é uma quest completa: você avança desbloqueando desafios até dominar o assunto.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {questProgress.map((q) => (
-            <QuestCard key={q.id} {...q} />
-          ))}
-        </div>
+       
       </main>
     </div>
   )
