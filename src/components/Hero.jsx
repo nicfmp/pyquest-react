@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import knightHero from '../assets/knight-hero.png'
 
 export default function Hero() {
   return (
@@ -54,41 +55,12 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[#232B25] bg-ink shadow-[0_20px_50px_-18px_rgba(22,29,24,0.45)]">
-          <div className="flex items-center gap-2 border-b border-[#2A332B] bg-[#1E251F] px-4 py-3">
-            <span className="h-[10px] w-[10px] rounded-full bg-amber" />
-            <span className="h-[10px] w-[10px] rounded-full bg-[#7FB89A]" />
-            <span className="h-[10px] w-[10px] rounded-full bg-[#5A6B5D]" />
-            <span className="ml-2 font-mono text-xs text-[#8B9A8E]">quest_02_loops.py</span>
-          </div>
-
-          <div className="px-[22px] pb-5 pt-[22px] font-mono text-[13.5px] leading-[1.85] text-[#D9E3DB]">
-            <p className="text-[#8B9A8E]"># desafio: some os números de 1 a 10</p>
-            <p>
-              <span className="text-[#7FB89A]">total</span> = <span className="text-amber">0</span>
-            </p>
-            <p>
-              <span className="text-[#5FCB88]">for</span> n <span className="text-[#5FCB88]">in</span> range(
-              <span className="text-amber">1</span>, <span className="text-amber">11</span>):
-            </p>
-            <p>&nbsp;&nbsp;total += n</p>
-            <p className="mt-3">print(total)</p>
-            <p>
-              <span className="text-[#8B9A8E]">&gt;&gt;&gt;</span> 55{' '}
-              <span className="text-[#7FB89A]">✓ correto</span>
-              <span className="ml-1 inline-block h-[15px] w-[7px] animate-blink align-middle bg-[#7FB89A]" />
-            </p>
-
-            <div className="mt-[18px] border-t border-dashed border-[#2A332B] pt-4">
-              <div className="mb-2 flex justify-between text-[11.5px] text-[#8B9A8E]">
-                <span>XP do módulo</span>
-                <span>640 / 1000</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#2A332B]">
-                <div className="h-full w-0 animate-fillxp rounded-full bg-gradient-to-r from-[#5FCB88] to-amber" />
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-center">
+          <img
+            src={knightHero}
+            alt="Cavaleiro pixel art do PyQuest com um redemoinho de energia mágica"
+            className="w-full max-w-[560px] drop-shadow-[0_30px_40px_rgba(30,74,54,0.25)] lg:max-w-[640px]"
+          />
         </div>
       </div>
     </section>
