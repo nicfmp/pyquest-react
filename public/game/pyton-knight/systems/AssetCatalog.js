@@ -1,0 +1,299 @@
+// Catálogo oficial e sprites originais complementares da rodada 2.
+window.AssetCatalog = {
+  "wall_top_main": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_a01.png",
+    "origin": "Castle Dungeon",
+    "description": "Bloco de parede superior principal (pedra grafite)."
+  },
+  "floor_main": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_a02.png",
+    "origin": "Castle Dungeon",
+    "description": "Piso caminhável padrão da dungeon."
+  },
+  "wall_transition": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_d02.png",
+    "origin": "Castle Dungeon",
+    "description": "Transição parede/piso para bordas e corredores."
+  },
+  "floor_edge": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_a03.png",
+    "origin": "Castle Dungeon",
+    "description": "Borda estrutural de corredor/plataforma."
+  },
+  "wall_face_main": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_a06.png",
+    "origin": "Castle Dungeon",
+    "description": "Face frontal de parede principal."
+  },
+  "wall_face_alt": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_g06.png",
+    "origin": "Castle Dungeon",
+    "description": "Face frontal alternativa para variação discreta."
+  },
+  "shadow_void": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_m04.png",
+    "origin": "Castle Dungeon",
+    "description": "Abismo/poço escuro para áreas não caminháveis."
+  },
+  "deep_void": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_n06.png",
+    "origin": "Castle Dungeon",
+    "description": "Preto profundo para regiões inacessíveis."
+  },
+  "arch_open": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_f01.png",
+    "origin": "Castle Dungeon",
+    "description": "Arco de passagem aberto."
+  },
+  "arch_dark": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_h01.png",
+    "origin": "Castle Dungeon",
+    "description": "Arco escuro/entrada secreta."
+  },
+  "door_wood_closed": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_i01.png",
+    "origin": "Castle Dungeon",
+    "description": "Porta de madeira fechada."
+  },
+  "door_wood_open": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_j01.png",
+    "origin": "Castle Dungeon",
+    "description": "Porta de madeira aberta/lateral."
+  },
+  "gate_front": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_l01.png",
+    "origin": "Castle Dungeon",
+    "description": "Grade/portão frontal."
+  },
+  "gate_angle": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_m01.png",
+    "origin": "Castle Dungeon",
+    "description": "Grade/portão em perspectiva."
+  },
+  "gate_stone": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_n01.png",
+    "origin": "Castle Dungeon",
+    "description": "Porta/portão de pedra."
+  },
+  "gate_side": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_o01.png",
+    "origin": "Castle Dungeon",
+    "description": "Grade lateral/variante."
+  },
+  "ceiling_spikes_silver": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_q02.png",
+    "origin": "Castle Dungeon",
+    "description": "Espinhos metálicos de perigo."
+  },
+  "ceiling_spikes_gold": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_r02.png",
+    "origin": "Castle Dungeon",
+    "description": "Variante dourada para destaque."
+  },
+  "floor_spikes_gray": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_f13.png",
+    "origin": "Castle Dungeon",
+    "description": "Espinhos no chão (fixos)."
+  },
+  "floor_spikes_gold": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_g13.png",
+    "origin": "Castle Dungeon",
+    "description": "Espinhos de variação/destaque."
+  },
+  "grate_square": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_t09.png",
+    "origin": "Castle Dungeon",
+    "description": "Grade de chão/quebra de piso."
+  },
+  "grate_diamond": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_u09.png",
+    "origin": "Castle Dungeon",
+    "description": "Grade inclinada/quebra de piso."
+  },
+  "fireplace_dim": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_v12.png",
+    "origin": "Castle Dungeon",
+    "description": "Lareira acesa discreta."
+  },
+  "fireplace_bright": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_v13.png",
+    "origin": "Castle Dungeon",
+    "description": "Lareira acesa mais intensa."
+  },
+  "chest_bronze": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_s02.png",
+    "origin": "Castle Dungeon",
+    "description": "Baú comum."
+  },
+  "chest_silver": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_t02.png",
+    "origin": "Castle Dungeon",
+    "description": "Baú intermediário."
+  },
+  "chest_gold": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_u02.png",
+    "origin": "Castle Dungeon",
+    "description": "Baú importante/recompensa."
+  },
+  "barrel_plain": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_u07.png",
+    "origin": "Castle Dungeon",
+    "description": "Barril decorativo."
+  },
+  "barrel_blue": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_u08.png",
+    "origin": "Castle Dungeon",
+    "description": "Barril azul/água."
+  },
+  "crate": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_i13.png",
+    "origin": "Castle Dungeon",
+    "description": "Caixa de madeira."
+  },
+  "coin_pile": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_x12.png",
+    "origin": "Castle Dungeon",
+    "description": "Pilha de ouro/recompensa visual."
+  },
+  "torch_left": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_v04.png",
+    "origin": "Castle Dungeon",
+    "description": "Tocha de parede."
+  },
+  "torch_right": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_w04.png",
+    "origin": "Castle Dungeon",
+    "description": "Tocha de parede variante."
+  },
+  "banner_blue_plain": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_x04.png",
+    "origin": "Castle Dungeon",
+    "description": "Estandarte azul simples."
+  },
+  "banner_blue_gold": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_y04.png",
+    "origin": "Castle Dungeon",
+    "description": "Estandarte azul com símbolo dourado."
+  },
+  "bookshelf_left": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_v09.png",
+    "origin": "Castle Dungeon",
+    "description": "Estante pequena."
+  },
+  "bookshelf_right": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_w09.png",
+    "origin": "Castle Dungeon",
+    "description": "Estante variante."
+  },
+  "painting_landscape": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_x08.png",
+    "origin": "Castle Dungeon",
+    "description": "Quadro decorativo."
+  },
+  "painting_castle": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_y08.png",
+    "origin": "Castle Dungeon",
+    "description": "Quadro decorativo variante."
+  },
+  "shield_blue": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_x10.png",
+    "origin": "Castle Dungeon",
+    "description": "Escudo azul."
+  },
+  "shield_gold": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_y10.png",
+    "origin": "Castle Dungeon",
+    "description": "Escudo dourado."
+  },
+  "weapons_crossed_steel": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_x11.png",
+    "origin": "Castle Dungeon",
+    "description": "Armas cruzadas em aço."
+  },
+  "weapons_crossed_gold": {
+    "path": "assets/dungeon/castle_details/individual_tiles/tile_y11.png",
+    "origin": "Castle Dungeon",
+    "description": "Armas cruzadas douradas."
+  },
+  "button": {
+    "path": "assets/dungeon/interactives/buttons/button.png",
+    "origin": "Basic / Ceramic",
+    "description": "Usar somente quando precisar de botão/placa de pressão funcional.",
+    "frameWidth": 16,
+    "frameHeight": 16
+  },
+  "key_idle": {
+    "path": "assets/dungeon/interactives/keys/key_idle.png",
+    "origin": "Basic / Ceramic",
+    "description": "Usar para chaves, pois o Castle não oferece um equivalente claro.",
+    "frameWidth": 16,
+    "frameHeight": 32
+  },
+  "trapdoor_open": {
+    "path": "assets/dungeon/traps/trapdoors/trapdoor_open.png",
+    "origin": "Basic / Ceramic",
+    "description": "Usar para alçapões/passagens especiais.",
+    "frameWidth": 16,
+    "frameHeight": 16
+  },
+  "spikes_on": {
+    "path": "assets/dungeon/traps/spikes/spikes_on.png",
+    "origin": "Basic / Ceramic",
+    "description": "Usar apenas se precisar de armadilha animada liga/desliga.",
+    "frameWidth": 16,
+    "frameHeight": 16
+  },
+  "spikes_off": {
+    "path": "assets/dungeon/traps/spikes/spikes_off.png",
+    "origin": "Basic / Ceramic",
+    "description": "Contraparte desligada da armadilha animada.",
+    "frameWidth": 16,
+    "frameHeight": 16
+  },
+  "chest_open_fallback": {
+    "path": "assets/dungeon/interactives/chests/yellow_chest_open.png",
+    "origin": "Basic / Ceramic",
+    "description": "Estado aberto dos baús de busca; seleção Castle recebida só traz baús fechados.",
+    "frameWidth": 16,
+    "frameHeight": 32
+  },
+  "custom_guardian": {
+    "path": "assets/custom/guardian.png",
+    "origin": "Sprite original gerada para Pyton Knight — rodada 2",
+    "description": "guardian; fundo transparente; imagem gerada com image_gen, sem substituir arquitetura Castle.",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254
+  },
+  "custom_basilisk": {
+    "path": "assets/custom/basilisk.png",
+    "origin": "Sprite original gerada para Pyton Knight — rodada 2",
+    "description": "basilisk; fundo transparente; imagem gerada com image_gen, sem substituir arquitetura Castle.",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254
+  },
+  "custom_pedestal": {
+    "path": "assets/custom/pedestal.png",
+    "origin": "Sprite original gerada para Pyton Knight — rodada 2",
+    "description": "pedestal; fundo transparente; imagem gerada com image_gen, sem substituir arquitetura Castle.",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254
+  },
+  "custom_rune": {
+    "path": "assets/custom/rune.png",
+    "origin": "Sprite original gerada para Pyton Knight — rodada 2",
+    "description": "rune; fundo transparente; imagem gerada com image_gen, sem substituir arquitetura Castle.",
+    "sourceWidth": 1330,
+    "sourceHeight": 1182
+  },
+  "custom_totem": {
+    "path": "assets/custom/totem.png",
+    "origin": "Sprite original gerada para Pyton Knight — rodada 2",
+    "description": "totem; fundo transparente; imagem gerada com image_gen, sem substituir arquitetura Castle.",
+    "sourceWidth": 1199,
+    "sourceHeight": 1312
+  }
+};
+
+for(const name of ['lever_off','lever_on','light_off','light_on','book_closed','book_open','rune_off','rune_on','portal_off','portal_on','ruby','crystal','chest_closed','chest_opening','chest_open','scroll']) window.AssetCatalog['v3_'+name]={path:'assets/v3/props-source.png',origin:'Arte original V3 gerada a partir das referências fornecidas',description:'Quadro normalizado em SpriteAtlasSystem',derived:true};
+for(const name of ['floor','floor_cracked','floor_rune','bridge']) window.AssetCatalog['v3_'+name]={path:'assets/v3/tiles-source.png',origin:'Arte original V3 gerada a partir da referência de dungeon',description:'Quadrante do tileset V3 preparado em SpriteAtlasSystem',derived:true};
+for(const state of ['off','on']) window.AssetCatalog['v4_totem_'+state]={path:`assets/v4/totem-${state}.png`,origin:'Arte original V4 gerada com image_gen; atlas normalizado sem alterar a arte',description:`Totem rúnico ${state==='on'?'energizado':'inativo'}, RGBA 64 × 64`};
