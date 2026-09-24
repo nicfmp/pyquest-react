@@ -59,7 +59,7 @@ export default function Hero() {
           <img
             src={knightHero}
             alt="Cavaleiro pixel art do PyQuest com um redemoinho de energia mágica"
-            className="w-full max-w-[560px] drop-shadow-[0_30px_40px_rgba(30,74,54,0.25)] lg:max-w-[640px]"
+            className="w-full max-w-[660px] drop-shadow-[0_30px_40px_rgba(30,74,54,0.25)] lg:max-w-[740px]"
           />
         </div>
       </div>
