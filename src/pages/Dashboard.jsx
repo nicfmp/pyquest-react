@@ -115,8 +115,8 @@ export default function Dashboard() {
       </nav>
 
       <div
-        className="relative bg-ink bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${dashboardBg})` }}
+        className="relative bg-ink bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${dashboardBg})`, backgroundSize: 'contain' }}
       >
         {/* véu escuro por cima da arte de fundo, só pra garantir contraste do texto */}
         <div className="absolute inset-0 bg-ink/55" />
@@ -156,8 +156,8 @@ export default function Dashboard() {
 
           <Link
             to="/jogo"
-            className="group relative mb-4 flex flex-col items-start justify-between gap-4 overflow-hidden rounded-[14px] border border-[#2A332B] bg-cover bg-center p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_28px_-18px_rgba(22,29,24,0.55)] sm:flex-row sm:items-center"
-            style={{ backgroundImage: `url(${pytonKnightBannerBg})` }}
+            className="group relative mb-4 flex flex-col items-start justify-between gap-4 overflow-hidden rounded-[14px] border border-[#2A332B] bg-ink bg-center bg-no-repeat p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_28px_-18px_rgba(22,29,24,0.55)] sm:flex-row sm:items-center"
+            style={{ backgroundImage: `url(${pytonKnightBannerBg})`, backgroundSize: 'contain' }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-ink/95 via-ink/75 to-ink/40" />
 

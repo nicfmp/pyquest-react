@@ -45,7 +45,7 @@ export default function Hero() {
               módulos
             </div>
             <div>
-              <strong className="block font-display text-[20px] font-bold text-ink">20</strong>
+              <strong className="block font-display text-[20px] font-bold text-ink">40</strong>
               desafios
             </div>
             <div>
@@ -59,7 +59,7 @@ export default function Hero() {
           <img
             src={knightHero}
             alt="Cavaleiro pixel art do PyQuest com um redemoinho de energia mágica"
-            className="w-full max-w-[760px] drop-shadow-[0_30px_40px_rgba(30,74,54,0.25)] lg:max-w-[840px]"
+            className="w-full max-w-[560px] drop-shadow-[0_30px_40px_rgba(30,74,54,0.25)] lg:max-w-[640px]"
           />
         </div>
       </div>
