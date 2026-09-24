@@ -45,7 +45,7 @@ export default function Hero() {
               módulos
             </div>
             <div>
-              <strong className="block font-display text-[20px] font-bold text-ink">40</strong>
+              <strong className="block font-display text-[20px] font-bold text-ink">20</strong>
               desafios
             </div>
             <div>
