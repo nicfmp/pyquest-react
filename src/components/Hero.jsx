@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import knightHero from '../assets/knight-hero.png'
+import knightHero from '../assets/knight-hero-scene.jpg'
 
 export default function Hero() {
   return (
@@ -20,8 +20,8 @@ export default function Hero() {
           </h1>
 
           <p className="mb-8 max-w-[460px] text-[17px] leading-[1.6] text-ink-soft">
-            Uma plataforma interativa com desafios progressivos, sistema de XP,
-            conquistas e um tutor de IA que explica seus erros em português.
+            Desafios progressivos, sistema de XP e conquistas — com um tutor de
+            IA que corrige seu código e explica cada erro em português.
           </p>
 
           <div className="mb-[34px] flex flex-wrap gap-[14px]">
@@ -29,7 +29,7 @@ export default function Hero() {
               to="/register"
               className="inline-flex items-center justify-center rounded-full bg-forest px-[22px] py-3 text-[14.5px] font-semibold text-paper transition-transform hover:-translate-y-px hover:bg-forest-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
             >
-              Iniciar jornada gratuita
+              Começar jornada gratuita
             </Link>
             <a
               href="#modulos"
@@ -58,8 +58,8 @@ export default function Hero() {
         <div className="flex items-center justify-center">
           <img
             src={knightHero}
-            alt="Cavaleiro pixel art do PyQuest com um redemoinho de energia mágica"
-            className="w-full max-w-[560px] drop-shadow-[0_30px_40px_rgba(30,74,54,0.25)] lg:max-w-[640px]"
+            alt="Cavaleiro pixel art do PyQuest avançando por uma trilha de XP em direção a um castelo"
+            className="w-full max-w-[460px] rounded-[20px] shadow-[0_30px_50px_-18px_rgba(30,74,54,0.4)] lg:max-w-[520px]"
           />
         </div>
       </div>
