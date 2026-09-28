@@ -119,10 +119,11 @@
         return null;
     }
     async function scopedBlock (scene, body, context, insideLoop, field, loopType) { context[field]=(context[field]||0)+1; if(loopType){context.loopTypes ||= [];context.loopTypes.push(loopType);} try { return await executeBlock(scene,body,context,insideLoop); } finally { context[field]--; if(loopType)context.loopTypes.pop(); } }
-    function report (scene, result, type) { scene.lastTermination = result; if (window.GameUI) { window.GameUI.definirFeedback(scene, result.message, type || 'info', result.cause); if (window.GameUI.marcarErro) window.GameUI.marcarErro(scene, result.lineNumber || null); } return result; }
+    function report (scene, result, type) { scene.lastTermination = result; window.JourneySystem?.result(scene,result); if (window.GameUI) { window.GameUI.definirFeedback(scene, result.message, type || 'info', result.cause); if (window.GameUI.marcarErro) window.GameUI.marcarErro(scene, result.lineNumber || null); } return result; }
     function finishBusy (scene) { scene.executando = false; if (window.GameUI) window.GameUI.definirExecutando(scene, false); }
     window.CommandInterpreter = {
         executar (scene, options) {
+            if (scene.gameOverPending || scene.devFlying) return Promise.resolve({cause:'EXECUTION_BLOCKED',message:'Encerre o voo ou retorne após a morte antes de executar.'});
             if (scene.executando) return Promise.resolve({ cause: 'BUSY', message: 'A execução atual ainda não terminou.' });
             const task = this.executarPrograma(scene, options); scene.executionTask = task; return task;
         },
@@ -133,6 +134,7 @@
         },
         async executarPrograma (scene, options) {
             if (scene.executando) return { cause: 'BUSY', message: 'A execução atual ainda não terminou.' };
+            window.JourneySystem?.begin(scene);
             const code = options && typeof options.code === 'string' ? options.code : scene.editorTexto.value;
             if (!code || !code.trim()) return report(scene, { cause: window.GAME_CONSTANTS.TERMINOS.SYNTAX_ERROR, message: 'Digite pelo menos uma instrução antes de executar.' }, 'error');
             scene.cancelRequested = false; scene.executando = true;
@@ -157,6 +159,7 @@
             const runtimeAnalysis = { ...analysis, concepts: new Set(), commands: new Set() };
             scene.runState.runtimeAnalysis = runtimeAnalysis;
             const context = { environment: {}, executedInstructions: 0, analysis, runtimeAnalysis };
+            if (scene.journeyExecution) scene.journeyExecution.context = context;
             try {
                 scene.runState.environment = context.environment;
                 await executeBlock(scene, program.body, context, false); checkCancellation(scene); scene.runState.environment = { ...context.environment };
@@ -171,7 +174,7 @@
             }
             catch (error) {
                 const cause = error.cause || window.GAME_CONSTANTS.TERMINOS.SEMANTIC_ERROR; let message = `${error.lineNumber ? `Linha ${error.lineNumber}: ` : ''}${error.message}`;
-                if (cause === window.GAME_CONSTANTS.TERMINOS.HAZARD_DEATH) { if(scene.atividade.v3) await window.AnimationSystem.hurt(scene); scene.livesRemaining--; if (scene.livesRemaining <= 0) { scene.livesRemaining = 3; message += ' As vidas acabaram; a sessão voltou a 3 vidas.'; } else message += ` Restam ${scene.livesRemaining} vida(s).`; window.DungeonSystem.resetRun(scene); }
+                if (cause === window.GAME_CONSTANTS.TERMINOS.HAZARD_DEATH) { if(scene.atividade.v3) await window.AnimationSystem.hurt(scene); if (scene.atividade.v6) { window.JourneySystem.die(scene); message += scene.gameOverPending ? ' As três vidas acabaram. Retorne à atividade anterior.' : ` Restam ${scene.livesRemaining} vida(s).`; } else { scene.livesRemaining--; if (scene.livesRemaining <= 0) { scene.livesRemaining = 3; message += ' As vidas acabaram; a sessão voltou a 3 vidas.'; } else message += ` Restam ${scene.livesRemaining} vida(s).`; window.DungeonSystem.resetRun(scene); } }
                 finishBusy(scene); if (window.GameUI) window.GameUI.atualizarVidas(scene); if (cause === window.GAME_CONSTANTS.TERMINOS.HAZARD_DEATH && window.MapRenderer.feedbackDano) window.MapRenderer.feedbackDano(scene); return report(scene, { cause, message, lineNumber: error.lineNumber || null }, cause === 'EXECUTION_CANCELLED' ? 'info' : cause === window.GAME_CONSTANTS.TERMINOS.HAZARD_DEATH ? 'danger' : 'error');
             }
         }

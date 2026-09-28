@@ -40,6 +40,7 @@
     };
     const SENSORS = {
         tem_chave: 'Informa se Guto possui a chave.', encontrou_chave: 'Informa se a busca encontrou a chave.',
+        interruptor_ativo: 'Consulta o mecanismo discreto da bifurcação.',
         placa_ativa: 'Informa se existe uma placa ligada.', alavanca_azul_ativa: 'Lê a alavanca azul.', alavanca_verde_ativa: 'Lê a alavanca verde.',
         corredor_continua: 'Informa se há perigo ativo à frente.', tem_bau_a_frente: 'Detecta um baú fechado à frente.', rubis_coletados: 'Retorna os rubis desta execução.'
     };

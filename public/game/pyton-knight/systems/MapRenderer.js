@@ -4,7 +4,10 @@
     function xy (scene, row, column) { return { x: scene.startX + column * scene.tileSize, y: scene.startY + row * scene.tileSize }; }
     function sprite (scene, point, role, size = 1, frame) { return scene.add.image(point.x, point.y, `official_${role}`, frame).setDisplaySize(scene.tileSize * size, scene.tileSize * size).setDepth(6); }
     function appearance (entity) {
+        if(entity.v6 && ['opening','closing'].includes(entity.state) && ['door','gate','guardian'].includes(entity.type))return appearance({...entity,state:entity.transitionFrom || 'closed'});
         const active = ACTIVE.has(entity.state);
+        if(entity.v6 && entity.type==='coin')return {role:'v6_coin',size:.72};
+        if(entity.discreet)return {role:'v3_lever_off',size:.48,caption:'Interruptor'};
         if (entity.visualVariant==='v4_totem') return {role:active?'v4_totem_on':'v4_totem_off',size:1,caption:`Totem ${entity.symbol || ''}`};
         if (entity.visualVariant==='bookshelf') return {role:entity.state==='read'?'bookshelf_right':'bookshelf_left',size:.94,caption:'Arquivo'};
         if (entity.type==='ruby') return {role:'v3_ruby',size:.72};
@@ -50,7 +53,8 @@
             for (let row = 0; row < scene.mapa.length; row++) for (let column = 0; column < scene.mapa[row].length; column++) {
                 const tile = scene.mapa[row][column], point = xy(scene, row, column);
                 const floorBelow = scene.mapa[row + 1] && scene.mapa[row + 1][column] !== T.PAREDE;
-                const role = this.tileRole(scene,row,column);
+                let role = this.tileRole(scene,row,column);
+                if(scene.atividade.v6 && ['wall_face_main','wall_face_alt','wall_top_main'].includes(role))role=`v6_${role}`;
                 sprite(scene, point, role).setDepth(1);
                 if (tile === T.PAREDE && floorBelow && column % 5 === 2) scene.decorations.push(sprite(scene, point, column % 2 ? 'torch_left' : 'torch_right').setDepth(2));
                 if (tile === T.SAIDA) { scene.exitVisual = scene.add.image(point.x, point.y, scene.atividade.v3?'official_v3_crystal':'saida').setDisplaySize(scene.tileSize * .74, scene.tileSize * .86).setDepth(4); }
@@ -98,12 +102,13 @@
                     scene.tweens.killTweensOf(visual.image);
                     if (!collected) { visual.image.setAlpha(.45); scene.tweens.add({ targets:visual.image, alpha:1, duration:220 }); }
                 } else visual.image.setAlpha(1);
-                visual.state = entity.state;
+                if (visual.runState === scene.runState) window.AtmosphereSystem?.changed(scene, entity, visual.state);
+                visual.state = entity.state; visual.runState = scene.runState;
             });
             for (const [id, visual] of scene.entitySprites) if (!seen.has(id)) { visual.image.destroy(); visual.label.destroy(); if (visual.handle) visual.handle.destroy(); visual.marker?.destroy(); scene.entitySprites.delete(id); }
             window.DecorationSystem?.updateMarkers(scene);
         },
-        feedbackDano (scene) { if (scene.guto && scene.tweens) { scene.guto.setTint(0xff887d); scene.time.delayedCall(220, () => scene.guto && scene.guto.active && scene.guto.clearTint()); } },
-        feedbackConclusao (scene) { if(scene.atividade.v3 && scene.guto && scene.tweens){window.AnimationSystem.pose(scene,'victory');scene.tweens.add({targets:scene.guto,y:scene.guto.y-10,duration:200,yoyo:true,repeat:2});} if (scene.exitVisual && scene.tweens) { scene.tweens.killTweensOf(scene.exitVisual); scene.tweens.add({ targets:scene.exitVisual, alpha:.45, duration:220, yoyo:true, repeat:2 }); } }
+        feedbackDano (scene) { window.AudioSystem?.play(scene,'damage'); if (scene.guto && scene.tweens) { scene.guto.setTint(0xff887d); scene.time.delayedCall(220, () => scene.guto && scene.guto.active && scene.guto.clearTint()); } },
+        feedbackConclusao (scene) { window.AudioSystem?.play(scene,'complete'); if(scene.atividade.v3 && scene.guto && scene.tweens && !window.AnimationSystem.reducedMotion()){window.AnimationSystem.pose(scene,'victory');scene.tweens.add({targets:scene.guto,y:scene.guto.y-10,duration:200,yoyo:true,repeat:2});} if (scene.exitVisual && scene.tweens) { scene.tweens.killTweensOf(scene.exitVisual); scene.tweens.add({ targets:scene.exitVisual, alpha:.45, duration:220, yoyo:true, repeat:2 }); } }
     };
 })();

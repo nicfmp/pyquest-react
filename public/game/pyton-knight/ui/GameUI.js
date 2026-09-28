@@ -27,6 +27,7 @@
                 </section>
             </div>`;
             scene.bookNode = host; scene.editorTexto = q(scene, '#pk-code'); scene.editorTexto.value = scene.atividade.codigoInicial || '';
+            window.AudioSystem?.mount(scene, q(scene,'.map-header'));
             setText(scene, '.activity-number', `UNIDADE ${scene.atividade.unidade} / ATIVIDADE ${scene.atividade.id} DE 20`);
             setText(scene, 'h1', scene.atividade.nome); setText(scene, '.concept', scene.atividade.concept); setText(scene, '.description', scene.atividade.descricao);
             setText(scene, '.map-subtitle', scene.atividade.tutorial ? 'Observe, programe e descubra o caminho.' : 'Seu código conduz Guto pela dungeon.');
@@ -47,12 +48,13 @@
             q(scene,'.clue-close').addEventListener('click',()=>{ q(scene,'.clue-dialog').hidden=true; });
             q(scene, '.run').addEventListener('click', () => window.CommandInterpreter.executar(scene));
             q(scene, '.restore').addEventListener('click', async () => {
+                if(scene.gameOverPending)return;
                 await window.CommandInterpreter.cancelar(scene);
                 window.CompletionSystem?.hide(scene);
                 scene.tutorialStepIndex = 0; scene.cancelRequested = false;
                 window.DiscoverySystem?.resetActivity(scene); const clue=q(scene,'.clue-dialog'); if(clue) clue.hidden=true;
                 scene.editorTexto.value = scene.atividade.codigoInicial || '';
-                window.DungeonSystem.resetRun(scene); window.TutorialSystem.inicializar(scene); scene.codeEditor.refresh(); scene.codeEditor.markError(null); this.limparConsole(scene);
+                window.DungeonSystem.resetRun(scene); window.TutorialSystem.inicializar(scene); scene.codeEditor.refresh(); scene.codeEditor.markError(null); this.limparConsole(scene); window.JourneySystem?.checkpoint(scene);
                 if (scene.cameraController) scene.cameraController.centerOnGuto();
                 this.definirFeedback(scene, 'Atividade reiniciada: código, mecanismos e descobertas restaurados. As vidas foram preservadas.', 'info');
             });
@@ -78,18 +80,20 @@
             entries.forEach(entry=>{const article=element('article');article.appendChild(element('small',entry.region));article.appendChild(element('h3',entry.title));article.appendChild(element('p',entry.text));list.appendChild(article);});
             if(scene.atividade.v3){const ids=q(scene,'.object-identifiers');if(ids){ids.textContent='';(scene.runState?.entities||[]).filter(e=>d.knownObjects?.[e.id]).forEach(e=>{const li=element('li');li.appendChild(element('code',e.id));li.appendChild(element('span',` — ${NAMES[e.type]||e.label||e.type}`));ids.appendChild(li);});}}
         },
-        restaurarRascunho (scene) { const draft = drafts.get(scene.atividade.id); if (draft) { scene.tutorialStepIndex = draft.step; scene.editorTexto.value = draft.code; this.atualizarTutor(scene); } scene.codeEditor.refresh(); },
+        limparRascunhos () { drafts.clear(); },
+        restaurarRascunho (scene) { if(scene.atividade.v6){ if(scene.resumeCode !== undefined) scene.editorTexto.value=scene.resumeCode; scene.codeEditor.refresh(); return; } const draft = drafts.get(scene.atividade.id); if (draft) { scene.tutorialStepIndex = draft.step; scene.editorTexto.value = draft.code; this.atualizarTutor(scene); } scene.codeEditor.refresh(); },
         async navegar (scene, index) {
-            if (scene.navigating) return;
+            if (scene.navigating || scene.gameOverPending) return;
             if (index !== null && (index < 0 || index >= window.ACTIVITIES.length || !window.ProgressionSystem.atividadeDesbloqueada(scene, index + 1))) return;
             scene.navigating = true; await window.CommandInterpreter.cancelar(scene);
+            window.JourneySystem?.checkpoint(scene);
             drafts.set(scene.atividade.id, { code: scene.editorTexto.value, step: scene.tutorialStepIndex || 0 });
             scene.bookNode.classList.add('leaving'); scene.cameras.main.fadeOut(180, 10, 12, 17);
             scene.time.delayedCall(190, () => scene.scene.start(index === null ? 'MainMenu' : 'Game', index === null ? {} : { atividadeIndex: index }));
         },
         destruir (scene) { this.cancelarEntrada(scene); if (scene.codeEditor) scene.codeEditor.destroy(); if (scene.cameraController) scene.cameraController.destroy(); if (scene.bookNode) { scene.bookNode.textContent = ''; scene.bookNode.classList.remove('leaving'); } scene.bookNode = null; },
         atualizarObjetivos (scene) { const list = q(scene, '.objectives'); if (!list) return; list.textContent = ''; (scene.objectiveStatuses || scene.atividade.objectives || []).forEach((item) => list.appendChild(element('li', `${item.completed ? '✓' : '○'} ${item.label}`, item.completed ? 'done' : ''))); setText(scene, '.key-status', scene.runState && scene.runState.hasKey ? 'Chave coletada' : ''); },
-        atualizarTutor (scene) { const box = q(scene, '.tutor'); if (!box) return; const steps = scene.atividade.tutorialSteps; box.hidden = !steps; if (steps) { const step = steps[scene.tutorialStepIndex || 0]; setText(scene, '.tutor-title', step.title); setText(scene, '.tutor-message', step.message || 'Execute o trecho e observe o resultado.'); setText(scene, '.tutorial-count', `Etapa ${(scene.tutorialStepIndex || 0) + 1} de ${steps.length}`); } if (scene.codeEditor) scene.codeEditor.refresh(); },
+        atualizarTutor (scene) { const box = q(scene, '.tutor'); if (!box) return; const steps = scene.atividade.tutorialSteps; box.hidden = !steps; if (steps) { const step = steps[scene.tutorialStepIndex || 0]; setText(scene, '.tutor-title', step.title); setText(scene, '.tutor-message', (step.message || 'Explore e observe o resultado.') + (step.example ? ` Exemplo de sintaxe: ${step.example}` : '')); setText(scene, '.tutorial-count', `Etapa ${(scene.tutorialStepIndex || 0) + 1} de ${steps.length}`); } if (scene.codeEditor) scene.codeEditor.refresh(); },
         atualizarVidas (scene) { setText(scene, '.lives', `${'♥'.repeat(scene.livesRemaining)}${'♡'.repeat(3 - scene.livesRemaining)}  ${scene.livesRemaining}/3`); },
         atualizarOrientacao (scene) { const vector = window.GAME_CONSTANTS.VETORES_ORIENTACAO[scene.playerFacing]; setText(scene, '.facing', `${vector.simbolo} ${scene.playerFacing}`); },
         atualizarProgresso (scene) { const progress = scene.playerProgress || window.PersistenceService.load(); setText(scene, '.progress', `XP ${progress.totalXp} · Moedas ${progress.walletCoins}`); if(scene.atividade.v4){const coins=window.CoinSystem.stats(scene);setText(scene,'.phase-coins',`Moedas da fase: ${coins.collected} / 5 · Total: ${coins.total} / 100`);} const next = q(scene, '.next'); if (next) next.disabled = Boolean(scene.executando) || scene.atividadeIndex >= 19 || !window.ProgressionSystem.atividadeDesbloqueada(scene, scene.atividadeIndex + 2); const previous = q(scene, '.previous'); if (previous) previous.disabled = Boolean(scene.executando) || scene.atividadeIndex <= 0; },

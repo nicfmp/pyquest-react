@@ -14,6 +14,7 @@
                 objectives:statuses.filter(o => !PEDAGOGICAL.has(o.type)).map(o => o.label),
                 rules:statuses.filter(o => PEDAGOGICAL.has(o.type)).map(o => o.label),
                 coins:window.CoinSystem.stats(scene), chests:chests.length ? { opened:chests.filter(e => e.state === 'open').length, total:chests.length } : null,
+                progress:{ completed:scene.playerProgress.completedActivities.length, total:window.ACTIVITIES.length },
                 lives:scene.livesRemaining, attempts:scene.executionCount || 0, budget:{ ...scene.budgetResult }, final:scene.atividade.id === window.ACTIVITIES.length };
         },
         hide (scene) {
@@ -28,6 +29,7 @@
                 panel = node('div',undefined,'completion-overlay');
                 panel.innerHTML = `<section class="completion-card" role="dialog" aria-modal="true" aria-labelledby="completion-title" aria-describedby="completion-reward" tabindex="-1">
                     <header class="completion-header"><span class="completion-emblem" aria-hidden="true">✦</span><div><small class="completion-eyebrow">CRISTAL CONQUISTADO</small><h2 id="completion-title"></h2><p id="completion-reward"></p></div></header>
+                    <div class="completion-journey"><span class="completion-progress-label"></span><progress class="completion-progress" aria-label="Atividades concluídas"></progress><small>Moedas da fase já creditadas na coleta.</small></div>
                     <div class="completion-body"><section><h3>Objetivos concluídos</h3><ul class="completion-objectives"></ul></section><section><h3>Regras pedagógicas cumpridas</h3><ul class="completion-rules"></ul></section><dl class="completion-stats"></dl></div>
                     <footer class="completion-actions"><button class="completion-retry">TENTAR NOVAMENTE</button><button class="completion-next"></button></footer>
                 </section>`;
@@ -44,6 +46,9 @@
             scene.completionModel = model;
             find(scene,'#completion-title').textContent = `Atividade ${model.id} — ${model.name}`;
             find(scene,'#completion-reward').textContent = reward.firstCompletion ? `+${reward.xp} XP · Progresso salvo` : 'Progresso salvo · Recompensa de conclusão já recebida';
+            find(scene,'.completion-progress-label').textContent = `${model.progress.completed} de ${model.progress.total} atividades concluídas`;
+            find(scene,'.completion-progress').max = model.progress.total;
+            find(scene,'.completion-progress').value = model.progress.completed;
             for (const [selector,items] of [['.completion-objectives',model.objectives],['.completion-rules',model.rules]]) {
                 const list=find(scene,selector); list.textContent=''; for (const label of items) list.appendChild(node('li',`✓ ${label}`));
             }

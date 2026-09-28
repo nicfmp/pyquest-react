@@ -2,7 +2,9 @@
     'use strict';
     let memoryState = null;
     let storageFailed = false;
+    let devState = null;
     let syncTimer = null;
+    function devProfile () { return Boolean(window.ACTIVITIES?.[0]?.v6 && new URLSearchParams(window.location?.search || "").get("dev") === "1"); }
     function defaults () { return { schemaVersion: 2, walletCoins: 0, totalXp: 0, completedActivities: [], unlockedMax: 1, rewardedActivities: {}, updatedAt: null }; }
     function normalize (raw) {
         const state = raw && typeof raw === 'object' ? raw : {}; const result = defaults();
@@ -11,6 +13,7 @@
         result.completedActivities = Array.isArray(state.completedActivities) ? [...new Set(state.completedActivities.filter(Number.isInteger))] : [];
         result.unlockedMax = Number.isInteger(state.unlockedMax) ? Math.min(20, Math.max(1, state.unlockedMax)) : 1;
         result.rewardedActivities = state.rewardedActivities && typeof state.rewardedActivities === 'object' ? { ...state.rewardedActivities } : {};
+        // Optional V4 extension: the storage key and V2 progression remain compatible.
         if (state.coinCollection && state.coinCollection.version === 1) {
             const ledger = state.coinCollection;
             const ids = [...new Set((Array.isArray(ledger.ids) ? ledger.ids : []).filter(id => typeof id === 'string' && /^A(?:0[1-9]|1[0-9]|20)_C0[1-5]$/.test(id)))].sort();
@@ -19,6 +22,7 @@
             result.coinCollection = { version:1, ids, legacyCredit, spent };
             result.walletCoins = legacyCredit + ids.length - spent;
         }
+        if (window.ACTIVITIES?.[0]?.v6 && window.JourneySystem) { result.schemaVersion=3; result.journey=window.JourneySystem.normalize(state.journey,result); }
         result.updatedAt = state.updatedAt || null; return result;
     }
     // Combina o estado local (localStorage deste navegador) com o estado vindo
@@ -26,6 +30,21 @@
     // valor dos dois lados. Importante no primeiro acesso após essa
     // funcionalidade existir (jogador já tinha progresso salvo só localmente)
     // e ao abrir o jogo num navegador novo (só existe progresso no servidor).
+    function mergeJourneys (a, b, newer) {
+        // a e b já foram normalizados (JourneySystem.normalize). Contadores: maior valor;
+        // descobertas: união; posição atual/retorno/checkpoints: vale o lado mais recente.
+        const older = newer === a ? b : a;
+        const stats = {};
+        for (const key of new Set([...Object.keys(a.stats || {}), ...Object.keys(b.stats || {})])) stats[key] = Math.max(a.stats?.[key] || 0, b.stats?.[key] || 0);
+        return {
+            ...newer,
+            completed: Boolean(a.completed || b.completed),
+            migrated: Boolean(a.migrated || b.migrated),
+            discoveries: [...new Set([...(a.discoveries || []), ...(b.discoveries || [])])].slice(0, 300),
+            stats,
+            checkpoints: { ...(older.checkpoints || {}), ...(newer.checkpoints || {}) }
+        };
+    }
     function mergeStates (a, b) {
         if (!a) return b; if (!b) return a;
         const merged = defaults();
@@ -45,7 +64,14 @@
             merged.coinCollection = { version: 1, ids, legacyCredit, spent };
             merged.walletCoins = legacyCredit + ids.length - spent;
         }
-        return merged;
+        if (a.journey || b.journey) {
+            if (a.journey && b.journey) {
+                const newer = String(b.updatedAt || '') > String(a.updatedAt || '') ? b.journey : a.journey;
+                merged.schemaVersion = 3;
+                merged.journey = mergeJourneys(a.journey, b.journey, newer);
+            } else { merged.schemaVersion = 3; merged.journey = a.journey || b.journey; }
+        }
+        return normalize(merged);
     }
     function storageAvailable () { try { return typeof window.localStorage !== 'undefined' && window.localStorage !== null; } catch (error) { return false; } }
     function readLocalRaw () {
@@ -88,7 +114,7 @@
         } catch (error) { /* ignora: melhor esforço */ }
     }
     if (typeof window !== 'undefined' && window.addEventListener) {
-        window.addEventListener('pagehide', function () { if (memoryState) flushRemoteSyncOnUnload(memoryState); });
+        window.addEventListener('pagehide', function () { if (memoryState && !devProfile()) flushRemoteSyncOnUnload(memoryState); });
     }
     // O jogo NUNCA espera a rede para iniciar (o boot do Phaser começa na
     // hora, como sempre). O RemoteSync já começou a buscar o progresso salvo
@@ -99,7 +125,7 @@
     // sem perder progresso feito enquanto a resposta não chegava.
     if (typeof window !== 'undefined' && window.__PYQUEST_REMOTE__ && window.__PYQUEST_REMOTE__.ready) {
         window.__PYQUEST_REMOTE__.ready.then(function (serverState) {
-            if (!serverState) return;
+            if (!serverState || devProfile()) return;
             const merged = mergeStates(normalize(memoryState || readLocalRaw()), normalize(serverState));
             memoryState = merged;
             writeLocalRaw(merged);
@@ -108,6 +134,7 @@
     }
     window.PersistenceService = {
         load () {
+            if (devProfile()) { devState ||= normalize(null); return JSON.parse(JSON.stringify(devState)); }
             if (memoryState) return JSON.parse(JSON.stringify(memoryState));
             if (storageFailed || !storageAvailable()) { memoryState = normalize(memoryState); return JSON.parse(JSON.stringify(memoryState)); }
             const normalized = normalize(readLocalRaw());
@@ -115,13 +142,16 @@
             return JSON.parse(JSON.stringify(normalized));
         },
         save (state) {
-            const value = normalize(state); value.updatedAt = new Date().toISOString(); memoryState = value;
+            const value = normalize(state); value.updatedAt = new Date().toISOString();
+            if (devProfile()) { devState = value; return JSON.parse(JSON.stringify(value)); }
+            memoryState = value;
             writeLocalRaw(value);
             scheduleRemoteSync(value);
             return JSON.parse(JSON.stringify(value));
         },
+        resetJourney () { return this.save(defaults()); },
         resetForTests () {
-            memoryState = defaults(); storageFailed = false;
+            devState = null; memoryState = null; storageFailed = false;
             if (storageAvailable()) { try { window.localStorage.removeItem(window.GAME_CONSTANTS.STORAGE_KEY); } catch (error) { storageFailed = true; } }
             return this.load();
         }

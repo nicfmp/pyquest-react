@@ -30,6 +30,8 @@ class Preloader extends Phaser.Scene
     this.load.setPath('');
     /* phaser:assets:end */
 
+    window.AudioSystem.preload(this);
+
     Object.entries(window.AssetCatalog).forEach(([role, asset]) => {
         if (asset.derived) return;
         if (asset.frameWidth) this.load.spritesheet(`official_${role}`, asset.path, { frameWidth:asset.frameWidth, frameHeight:asset.frameHeight });

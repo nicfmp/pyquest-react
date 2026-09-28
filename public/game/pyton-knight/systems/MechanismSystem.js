@@ -52,6 +52,7 @@
         },
         async call (scene, name, args, metadata, original) {
             const line = metadata?.lineNumber;
+            if (name==='interruptor_ativo') { if(args.length)throw error('interruptor_ativo() não recebe argumentos.',line); return Boolean(scene.runState.flags.routeSwitch); }
             if (['examinar','ativar_interruptor','sala_iluminada','tem_inscricao_a_frente'].includes(name) && args.length) throw error(`${name}() não recebe argumentos.`,line);
             if (name==='examinar') {
                 const e=this.local(scene,['inscription'],null,['same','ahead']);
@@ -59,8 +60,13 @@
                 await window.AnimationSystem.interact(scene); const text=window.DiscoverySystem.examine(scene,e); await this.automatic(scene); return text;
             }
             if (name==='ativar_interruptor') {
-                const e=this.local(scene,['light_switch']);
+                const e=this.local(scene,scene.atividade.v6 ? ['light_switch','mechanism_switch'] : ['light_switch']);
                 if (!e) throw error('Aproxime-se do interruptor de luz.',line);
+                if(e.type==='mechanism_switch') {
+                    e.state=e.state==='on'?'off':'on';scene.runState.flags[e.flag||e.id]=e.state==='on';
+                    for(const link of e.connections||[]){const target=window.DungeonSystem.getEntity(scene,link.targetId);if(target)await window.AnimationSystem.transition(scene,target,target.state,e.state==='on'?link.activeState:link.inactiveState);}
+                    window.MapRenderer?.atualizarEntidades(scene);return e.state==='on';
+                }
                 await window.AnimationSystem.interact(scene); await window.AnimationSystem.transition(scene,e,e.state,'on');
                 window.DiscoverySystem.reveal(scene,e.rooms||[]); await window.AnimationSystem.light(scene,e.rooms||[]); await this.automatic(scene); return true;
             }
@@ -75,9 +81,23 @@
                 const e=this.local(scene,['door','gate','guardian'],args[0]);
                 if (e && !this.requirements(scene,e)) { window.GameUI?.definirFeedback(scene,e.lockHint || 'O selo continua fechado. Confira as pistas e os mecanismos necessários.','warning'); return false; }
             }
+            const inputPedestal=name==='input' ? this.local(scene,['pedestal']) : null;
+            const question=inputPedestal?.questions?.find(item=>!scene.runState.answers[item.id]);
+            if(inputPedestal?.questions && !question)throw error('As respostas deste pedestal já foram registradas.',line);
+            if(question)args[0]=question.prompt;
             const before=new Map(scene.runState.entities.map(e=>[e.id,e.state]));
             const result=await original();
-            if (name==='input') { const e=this.local(scene,['pedestal']); if(e) scene.runState.inputsByPedestal[e.id]=String(result); }
+            if (name==='input') {
+                const e=inputPedestal;
+                if(e) scene.runState.inputsByPedestal[e.id]=String(result);
+                const text=String(result).trim();
+                const correct=question ? (typeof question.expected==='number' ? /^\d+$/.test(text) && Number(text)===question.expected : text===question.expected) : e?.expectedInput === undefined ? undefined : text===String(e.expectedInput);
+                window.JourneySystem?.answer(scene,correct);
+                if(question) {
+                    if(!correct){e.state='incorrect';window.MapRenderer?.atualizarEntidades(scene);throw error(`A resposta para ${question.prompt} não corresponde ao registro do Diário.`,line);}
+                    scene.runState.answers[question.id]=text;scene.runState.flags[`answer_${question.id}`]=true;scene.runState.inputsByPedestal[question.id]=text;
+                }
+            }
             if (!['andar_frente','virar_direita','virar_esquerda'].includes(name)) {
                 for (const e of scene.runState.entities) if(before.get(e.id)!==e.state) { if(!(['entrar_espelho','entrar_portao'].includes(name)&&['mirror','portal'].includes(e.type))) await window.AnimationSystem.transition(scene,e,before.get(e.id),e.state); if(e.revealsRooms && ['on','active'].includes(e.state)) window.DiscoverySystem.reveal(scene,e.revealsRooms); }
             }

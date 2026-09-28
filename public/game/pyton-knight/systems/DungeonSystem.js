@@ -8,7 +8,7 @@
         'porta_final_bloqueada', 'armadilha_ativa', 'tem_armadilha_a_frente', 'tem_placa_a_frente',
         'placa_ativa', 'alavanca_ativa', 'alavanca_azul_ativa', 'alavanca_verde_ativa',
         'ponte_ativa', 'tem_bau_a_frente', 'encontrou_chave', 'caminho_livre',
-        'moedas_coletadas', 'rubis_coletados', 'corredor_continua', 'examinar', 'ativar_interruptor', 'sala_iluminada', 'tem_inscricao_a_frente'
+        'interruptor_ativo', 'moedas_coletadas', 'rubis_coletados', 'corredor_continua', 'examinar', 'ativar_interruptor', 'sala_iluminada', 'tem_inscricao_a_frente'
     ]);
     function clone (value) { return JSON.parse(JSON.stringify(value || [])); }
     function defaultState (type) { return ({ door: 'closed', gate: 'closed', lever: 'off', pressure_plate: 'off', toggle_plate: 'off', hazard: 'active', key: 'available', coin: 'available', output_rune: 'off', bridge: 'inactive', bridge_segment: 'inactive', mirror: 'inactive', portal: 'available', chest: 'closed', guardian: 'blocking', pedestal: 'waiting', totem: 'inactive', basilisk: 'protected' })[type] || 'idle'; }
@@ -79,7 +79,7 @@
             }
             if(activity.v3) entities.forEach(e=>{ if(e.variantMinTraps) e.minTraps=e.variantMinTraps[(scene.sessionVariantIndex||0)%e.variantMinTraps.length]; if(e.variantTexts) e.text=e.variantTexts[(scene.sessionVariantIndex||0)%e.variantTexts.length]; if(e.variantInputs) e.expectedInput=e.variantInputs[(scene.sessionVariantIndex||0)%e.variantInputs.length]; });
             scene.budgetResult = null;
-            scene.runState = { entities, outputs: [], inputs: [], inputsByPedestal: {}, sequences: {}, worldTick: 0, traceOrder: 0, actions: [], assignments: [], searchLog: [], coinsPending: 0, flags: { ...(activity.initialFlags || {}) }, hasKey: false, reachedExit: false, environment: {}, analysis: null, occupiedTile: null };
+            scene.runState = { entities, answers: {}, outputs: [], inputs: [], inputsByPedestal: {}, sequences: {}, worldTick: 0, traceOrder: 0, actions: [], assignments: [], searchLog: [], coinsPending: 0, flags: { ...(activity.initialFlags || {}) }, hasKey: false, reachedExit: false, environment: {}, analysis: null, occupiedTile: null };
             window.CoinSystem?.restore(scene);
             scene.completionProcessed = false; window.PlayerController.reiniciar(scene); window.DiscoverySystem?.restore(scene); if (window.MapRenderer) window.MapRenderer.atualizarEntidades(scene); if (window.MissionObjectiveSystem) window.MissionObjectiveSystem.reset(scene); if (window.GameUI) window.GameUI.atualizarMoedasDaExecucao(scene);
         },
@@ -110,6 +110,7 @@
             scene.runState.entities.filter((entity) => entity.row === row && entity.column === column).forEach((entity) => {
                 if (entity.type === 'key' && entity.state === 'available') { entity.state = 'collected'; scene.runState.hasKey = true; scene.runState.flags.keyCollected = true; }
                 if (entity.type === 'coin' && entity.state === 'available' && !entity.manualCollect) { if (scene.atividade.v4) window.CoinSystem.collect(scene, entity); else { entity.state = 'collected'; scene.runState.coinsPending++; } if (entity.flag) scene.runState.flags[entity.flag] = true; }
+                if (entity.inactivePlate) return;
                 if(scene.atividade.v3 && ['pressure_plate','toggle_plate'].includes(entity.type) && entity.mode==='sequence'){window.MechanismSystem.enterSequencePlate(scene,entity);return;}
                 if (entity.type === 'pressure_plate') { entity.state = 'on'; scene.runState.flags[entity.flag || entity.id] = true; applyConnections(scene, entity, true); }
                 if (entity.type === 'toggle_plate' && entity.mode !== 'logic') { entity.state = entity.state === 'on' ? 'off' : 'on'; scene.runState.flags[entity.flag || entity.id] = entity.state === 'on'; applyConnections(scene, entity, entity.state === 'on'); }

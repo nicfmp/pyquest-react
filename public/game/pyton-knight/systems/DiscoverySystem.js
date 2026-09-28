@@ -48,7 +48,7 @@
         reveal (scene, ids) {
             const d = this.ensure(scene);
             for (const id of ids) { d.litRooms[id] = true; scene.runState.flags[`light_${id}`] = true; }
-            this.observe(scene);
+            this.observe(scene); window.JourneySystem?.checkpoint(scene);
         },
         examine (scene, entity) {
             const d = this.ensure(scene);
@@ -57,6 +57,7 @@
             entity.state='read'; window.MapRenderer?.atualizarEntidades(scene);
             window.GameUI?.mostrarInscricao?.(scene, entry);
             window.GameUI?.atualizarDescobertas?.(scene);
+            window.JourneySystem?.checkpoint(scene);
             return entry.text;
         },
         onEnter (scene) {

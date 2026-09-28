@@ -29,6 +29,20 @@
     }
     window.SpriteAtlasSystem={
         names, normalize,
+        // V6 render-time derivation keeps source art and coin colours intact.
+        coinCutout (image) {
+            const result=canvas(image.width,image.height),ctx=result.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);
+            const data=ctx.getImageData(0,0,image.width,image.height),p=data.data;
+            for(let i=0;i<p.length;i+=4) if(!(p[i]-p[i+2]>16 && p[i+1]>p[i+2] && p[i]>=p[i+1]))p[i+3]=0;
+            ctx.putImageData(data,0,0);return result;
+        },
+        wallPalette (image) {
+            const result=canvas(image.width,image.height),ctx=result.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);
+            const data=ctx.getImageData(0,0,image.width,image.height),p=data.data;
+            // Retain the masonry, vertical faces and mortar; match the floor's violet stone.
+            for(let i=0;i<p.length;i+=4){const value=Math.round(p[i]*.3+p[i+1]*.59+p[i+2]*.11);p[i]=Math.min(255,value*1.12);p[i+1]=Math.min(255,value*1.02);p[i+2]=Math.min(255,value*1.25);}
+            ctx.putImageData(data,0,0);return result;
+        },
         tileNames:['floor','floor_cracked','floor_rune','bridge'],
         tiles (image) {
             return this.tileNames.map((name,i)=>{const tile=canvas(64,64),ctx=tile.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.drawImage(image,(i%2)*image.width/2,Math.floor(i/2)*image.height/2,image.width/2,image.height/2,0,0,64,64);return tile;});
@@ -39,6 +53,10 @@
             const props=normalize(scene.textures.get('v3_props_source').getSourceImage(),[0,310,600,910,1254],54,54);
             for(let i=0;i<16;i++) {const frame=canvas(64,64);frame.getContext('2d').drawImage(props,(i%4)*64,Math.floor(i/4)*64,64,64,0,0,64,64);scene.textures.addCanvas(`official_v3_${names[i]}`,frame);}
             this.tiles(scene.textures.get('v3_tiles_source').getSourceImage()).forEach((tile,i)=>scene.textures.addCanvas(`official_v3_${this.tileNames[i]}`,tile));
+            if(window.ACTIVITIES[0]?.v6) {
+                scene.textures.addCanvas('official_v6_coin',this.coinCutout(scene.textures.get('official_coin_pile').getSourceImage()));
+                for(const role of ['wall_face_main','wall_face_alt','wall_top_main'])scene.textures.addCanvas(`official_v6_${role}`,this.wallPalette(scene.textures.get(`official_${role}`).getSourceImage()));
+            }
         }
     };
 })();

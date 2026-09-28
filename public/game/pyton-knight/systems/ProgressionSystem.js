@@ -1,6 +1,6 @@
 window.ProgressionSystem = {
     inicializar (scene) { scene.playerProgress = window.PersistenceService.load(); return scene.playerProgress; },
-    atividadeDesbloqueada (scene, id) { return Boolean(scene.devMode) || id <= (scene.playerProgress || window.PersistenceService.load()).unlockedMax; },
+    atividadeDesbloqueada (scene, id) { const p=scene.playerProgress || window.PersistenceService.load(); return Boolean(scene.devMode) || id <= Math.min(p.unlockedMax,p.journey?.recoveryActivity || 20); },
     concluirAtividade (scene) {
         if (scene.completionProcessed) return scene.lastReward || { xp: 0, coins: 0, firstCompletion: false };
         scene.completionProcessed = true;
@@ -16,6 +16,7 @@ window.ProgressionSystem = {
         }
         if (!progress.completedActivities.includes(activity.id)) progress.completedActivities.push(activity.id);
         progress.completedActivities.sort((a, b) => a - b); progress.unlockedMax = Math.max(progress.unlockedMax, Math.min(window.ACTIVITIES.length, activity.id + 1));
+        window.JourneySystem?.complete(scene,progress);
         scene.playerProgress = window.PersistenceService.save(progress); scene.lastReward = { xp, coins, firstCompletion: !rewarded, livesRemaining: scene.livesRemaining };
         if (window.GameUI) window.GameUI.atualizarProgresso(scene); return scene.lastReward;
     }

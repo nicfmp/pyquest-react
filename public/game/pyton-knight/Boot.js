@@ -16,6 +16,7 @@ class Boot extends Phaser.Scene
     create ()
     {
         this.sound.pauseOnBlur = false;
+        window.AudioSystem.forScene(this);
 
         this.scene.start('Preloader');
     }
