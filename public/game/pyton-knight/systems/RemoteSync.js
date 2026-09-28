@@ -1,51 +1,46 @@
-// Ponte entre o jogo (que roda dentro de um <iframe> no site PyQuest) e o
-// backend. O React embute o jogo passando ?apiBase=...&token=... na URL do
-// iframe; esse arquivo lê esses parâmetros e busca o progresso salvo no
-// servidor ANTES do Game.js ser carregado (ver index.html), para que
-// PersistenceService já encontre o estado do servidor pronto na primeira
-// chamada de load(). Se não houver apiBase/token (jogo aberto fora do site,
-// ou offline), tudo continua funcionando normalmente a partir do localStorage.
-(function () {
-    'use strict';
-
-    function readParam(name) {
-        try { return new URLSearchParams(window.location.search).get(name); }
-        catch (error) { return null; }
-    }
-
-    const apiBase = readParam('apiBase');
-    const token = readParam('token');
-    // 20s dá tempo do backend "acordar" caso esteja no plano gratuito do
-    // Render (que hiberna o serviço depois de um tempo sem uso). Isso não
-    // atrasa o jogo: o boot do Phaser não espera essa busca terminar.
-    const TIMEOUT_MS = 20000;
-
-    function timeout(ms) {
-        return new Promise((resolve) => setTimeout(() => resolve(null), ms));
-    }
-
-    async function fetchServerState() {
-        if (!apiBase || !token) return null;
-        try {
-            const response = await Promise.race([
-                fetch(`${apiBase}/game-progress`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                timeout(TIMEOUT_MS),
-            ]);
-            if (!response || !response.ok) return null;
-            const body = await response.json();
-            return body && body.state && typeof body.state === 'object' ? body.state : null;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    const remote = { apiBase, token, serverState: null, ready: null };
-    remote.ready = fetchServerState().then((state) => {
-        remote.serverState = state;
-        return state;
-    });
-
-    window.__PYQUEST_REMOTE__ = remote;
-})();
+// O site envia a autenticação ao iframe por postMessage, sem colocar o token na URL.
+(function () {
+    'use strict';
+
+    let resolveReady, rejectReady;
+    const ready = new Promise((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
+    const remote = { apiBase: null, token: null, serverState: null, ready };
+    window.__PYQUEST_REMOTE__ = remote;
+
+    const watchdog = setTimeout(() => rejectReady(new Error('Não foi possível conectar o jogo à sua conta.')), 60000);
+    window.addEventListener('message', async (event) => {
+        if (event.source !== window.parent || event.origin !== window.location.origin || event.data?.type !== 'pyquest:auth' || remote.token) return;
+        const { apiBase, token } = event.data;
+        if (typeof apiBase !== 'string' || typeof token !== 'string' || !token || !apiBase.startsWith('http')) return;
+        remote.apiBase = apiBase;
+        remote.token = token;
+        try {
+            const response = await fetch(`${apiBase}/game-progress`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) throw new Error(response.status === 401 ? 'Sua sessão expirou. Entre novamente para jogar.' : 'Não foi possível carregar seu progresso do banco de dados.');
+            const body = await response.json();
+            clearTimeout(watchdog);
+            remote.serverState = body?.state && typeof body.state === 'object' && !Array.isArray(body.state) ? body.state : null;
+            if (!remote.serverState) {
+                // Importação opcional do save antigo; o armazenamento local deixa de ser usado depois dela.
+                let previous = null;
+                try { previous = JSON.parse(localStorage.getItem('pyton_knight_progress_v2')); } catch (error) { /* nenhum save antigo válido */ }
+                const hasProgress = previous && typeof previous === 'object' &&
+                    (previous.completedActivities?.length || previous.totalXp || previous.walletCoins || Object.keys(previous.journey?.checkpoints || {}).length);
+                if (hasProgress && window.confirm('Existe progresso antigo neste navegador. Ele pertence à sua conta? Clique em OK para importar para o banco de dados.')) {
+                    const imported = await fetch(`${apiBase}/game-progress`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ state: previous })
+                    });
+                    if (!imported.ok) throw new Error('Não foi possível importar o progresso antigo. Tente novamente.');
+                    remote.serverState = previous;
+                    try { localStorage.removeItem('pyton_knight_progress_v2'); } catch (error) { /* save no banco confirmado */ }
+                }
+            }
+            resolveReady(remote.serverState);
+        } catch (error) {
+            clearTimeout(watchdog);
+            rejectReady(error);
+        }
+    });
+    window.parent.postMessage({ type: 'pyquest:ready' }, window.location.origin);
+})();

@@ -1,11 +1,27 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { API_URL } from '../lib/api'
+import { getToken } from '../lib/auth'
 
 const GAME_SRC = '/game/pyton-knight/index.html'
 
 export default function PytonKnight() {
   const [loaded, setLoaded] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  const gameFrame = useRef(null)
+
+  const connectGame = useCallback(() => {
+    const frame = gameFrame.current?.contentWindow
+    if (frame) frame.postMessage({ type: 'pyquest:auth', apiBase: `${API_URL.replace(/\/$/, '')}/api`, token: getToken() }, window.location.origin)
+  }, [])
+
+  useEffect(() => {
+    function onMessage(event) {
+      if (event.origin === window.location.origin && event.source === gameFrame.current?.contentWindow && event.data?.type === 'pyquest:ready') connectGame()
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [connectGame])
 
   return (
     <div className={`flex min-h-screen flex-col bg-ink ${fullscreen ? 'fixed inset-0 z-[100]' : ''}`}>
@@ -46,9 +62,10 @@ export default function PytonKnight() {
         )}
 
         <iframe
+          ref={gameFrame}
           title="Pyton Knight"
           src={GAME_SRC}
-          onLoad={() => setLoaded(true)}
+          onLoad={() => { setLoaded(true); connectGame() }}
           className={`w-full border-0 ${fullscreen ? 'h-screen' : 'h-[calc(100vh-65px)]'}`}
           allow="fullscreen; gamepad"
         />

@@ -1,10 +1,7 @@
 (function () {
     'use strict';
     let memoryState = null;
-    let storageFailed = false;
     let devState = null;
-    let syncTimer = null;
-    function devProfile () { return Boolean(window.ACTIVITIES?.[0]?.v6 && new URLSearchParams(window.location?.search || "").get("dev") === "1"); }
     function defaults () { return { schemaVersion: 2, walletCoins: 0, totalXp: 0, completedActivities: [], unlockedMax: 1, rewardedActivities: {}, updatedAt: null }; }
     function normalize (raw) {
         const state = raw && typeof raw === 'object' ? raw : {}; const result = defaults();
@@ -13,7 +10,7 @@
         result.completedActivities = Array.isArray(state.completedActivities) ? [...new Set(state.completedActivities.filter(Number.isInteger))] : [];
         result.unlockedMax = Number.isInteger(state.unlockedMax) ? Math.min(20, Math.max(1, state.unlockedMax)) : 1;
         result.rewardedActivities = state.rewardedActivities && typeof state.rewardedActivities === 'object' ? { ...state.rewardedActivities } : {};
-        // Optional V4 extension: the storage key and V2 progression remain compatible.
+        // A estrutura de moedas permanece compatível com saves anteriores no banco.
         if (state.coinCollection && state.coinCollection.version === 1) {
             const ledger = state.coinCollection;
             const ids = [...new Set((Array.isArray(ledger.ids) ? ledger.ids : []).filter(id => typeof id === 'string' && /^A(?:0[1-9]|1[0-9]|20)_C0[1-5]$/.test(id)))].sort();
@@ -25,135 +22,88 @@
         if (window.ACTIVITIES?.[0]?.v6 && window.JourneySystem) { result.schemaVersion=3; result.journey=window.JourneySystem.normalize(state.journey,result); }
         result.updatedAt = state.updatedAt || null; return result;
     }
-    // Combina o estado local (localStorage deste navegador) com o estado vindo
-    // do servidor, sem nunca perder progresso: cada campo fica com o "melhor"
-    // valor dos dois lados. Importante no primeiro acesso após essa
-    // funcionalidade existir (jogador já tinha progresso salvo só localmente)
-    // e ao abrir o jogo num navegador novo (só existe progresso no servidor).
-    function mergeJourneys (a, b, newer) {
-        // a e b já foram normalizados (JourneySystem.normalize). Contadores: maior valor;
-        // descobertas: união; posição atual/retorno/checkpoints: vale o lado mais recente.
-        const older = newer === a ? b : a;
-        const stats = {};
-        for (const key of new Set([...Object.keys(a.stats || {}), ...Object.keys(b.stats || {})])) stats[key] = Math.max(a.stats?.[key] || 0, b.stats?.[key] || 0);
-        return {
-            ...newer,
-            completed: Boolean(a.completed || b.completed),
-            migrated: Boolean(a.migrated || b.migrated),
-            discoveries: [...new Set([...(a.discoveries || []), ...(b.discoveries || [])])].slice(0, 300),
-            stats,
-            checkpoints: { ...(older.checkpoints || {}), ...(newer.checkpoints || {}) }
-        };
-    }
-    function mergeStates (a, b) {
-        if (!a) return b; if (!b) return a;
-        const merged = defaults();
-        merged.walletCoins = Math.max(a.walletCoins, b.walletCoins);
-        merged.totalXp = Math.max(a.totalXp, b.totalXp);
-        merged.completedActivities = [...new Set([...a.completedActivities, ...b.completedActivities])];
-        merged.unlockedMax = Math.max(a.unlockedMax, b.unlockedMax);
-        merged.rewardedActivities = { ...a.rewardedActivities, ...b.rewardedActivities };
-        merged.updatedAt = new Date().toISOString();
-        if (a.coinCollection || b.coinCollection) {
-            const idsA = a.coinCollection ? a.coinCollection.ids : [];
-            const idsB = b.coinCollection ? b.coinCollection.ids : [];
-            const ids = [...new Set([...idsA, ...idsB])].sort();
-            const legacyCredit = Math.max(a.coinCollection ? a.coinCollection.legacyCredit : 0, b.coinCollection ? b.coinCollection.legacyCredit : 0);
-            const spentRaw = Math.max(a.coinCollection ? a.coinCollection.spent : 0, b.coinCollection ? b.coinCollection.spent : 0);
-            const spent = Math.min(legacyCredit + ids.length, spentRaw);
-            merged.coinCollection = { version: 1, ids, legacyCredit, spent };
-            merged.walletCoins = legacyCredit + ids.length - spent;
+    let syncTimer = null;
+    let inFlight = false;
+    let dirty = false;
+    let retryTimer = null;
+    let saveNotice = null;
+
+    function showSaveError (message) {
+        if (!saveNotice) {
+            saveNotice = document.createElement('div');
+            saveNotice.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99999;background:#5d2020;color:white;padding:10px 16px;border-radius:8px;font:14px Arial;text-align:center;max-width:90vw';
+            document.body.appendChild(saveNotice);
         }
-        if (a.journey || b.journey) {
-            if (a.journey && b.journey) {
-                const newer = String(b.updatedAt || '') > String(a.updatedAt || '') ? b.journey : a.journey;
-                merged.schemaVersion = 3;
-                merged.journey = mergeJourneys(a.journey, b.journey, newer);
-            } else { merged.schemaVersion = 3; merged.journey = a.journey || b.journey; }
-        }
-        return normalize(merged);
+        saveNotice.textContent = message;
     }
-    function storageAvailable () { try { return typeof window.localStorage !== 'undefined' && window.localStorage !== null; } catch (error) { return false; } }
-    function readLocalRaw () {
-        if (storageFailed || !storageAvailable()) return null;
-        try { const raw = window.localStorage.getItem(window.GAME_CONSTANTS.STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
-        catch (error) { storageFailed = true; return null; }
+    function clearSaveError () { if (saveNotice) { saveNotice.remove(); saveNotice = null; } }
+    function clone (value) { return JSON.parse(JSON.stringify(value)); }
+    function devProfile () { return Boolean(window.ACTIVITIES?.[0]?.v6 && new URLSearchParams(window.location.search).get('dev') === '1'); }
+
+    function schedule () {
+        if (devProfile() || !dirty) return;
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(flush, 400);
     }
-    function writeLocalRaw (value) {
-        if (storageFailed || !storageAvailable()) return;
-        try { window.localStorage.setItem(window.GAME_CONSTANTS.STORAGE_KEY, JSON.stringify(value)); }
-        catch (error) { storageFailed = true; }
-    }
-    // Envia o progresso para o backend em segundo plano, sem travar o jogo.
-    // Debounced para não disparar uma request a cada moeda coletada.
-    function scheduleRemoteSync (value) {
-        const remote = (typeof window !== 'undefined') ? window.__PYQUEST_REMOTE__ : null;
-        if (!remote || !remote.apiBase || !remote.token) return;
-        if (syncTimer) clearTimeout(syncTimer);
-        syncTimer = setTimeout(function () {
-            syncTimer = null;
-            try {
-                fetch(`${remote.apiBase}/game-progress`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${remote.token}` },
-                    body: JSON.stringify({ state: value }),
-                }).catch(function () { /* offline: localStorage continua sendo a fonte de verdade local */ });
-            } catch (error) { /* ignora erros de rede */ }
-        }, 600);
-    }
-    // Última tentativa de salvar ao fechar a aba/trocar de página. sendBeacon
-    // não permite headers customizados, por isso o token vai como query string
-    // só nesta chamada (a rota do backend aceita os dois formatos).
-    function flushRemoteSyncOnUnload (value) {
-        const remote = (typeof window !== 'undefined') ? window.__PYQUEST_REMOTE__ : null;
-        if (!remote || !remote.apiBase || !remote.token) return;
-        if (typeof navigator === 'undefined' || !navigator.sendBeacon) return;
+    async function flush () {
+        clearTimeout(syncTimer);
+        if (inFlight || !dirty) return;
+        const remote = window.__PYQUEST_REMOTE__;
+        if (!remote?.token || !remote?.apiBase) return;
+        const snapshot = clone(memoryState);
+        dirty = false;
+        inFlight = true;
         try {
-            const blob = new Blob([JSON.stringify({ state: value })], { type: 'application/json' });
-            navigator.sendBeacon(`${remote.apiBase}/game-progress?token=${encodeURIComponent(remote.token)}`, blob);
-        } catch (error) { /* ignora: melhor esforço */ }
+            const response = await fetch(`${remote.apiBase}/game-progress`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${remote.token}` },
+                body: JSON.stringify({ state: snapshot })
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            clearSaveError();
+            clearTimeout(retryTimer);
+            retryTimer = null;
+        } catch (error) {
+            dirty = true;
+            showSaveError('Progresso ainda não salvo. Verifique a conexão; uma nova tentativa será feita automaticamente.');
+            clearTimeout(retryTimer);
+            retryTimer = setTimeout(() => { retryTimer = null; flush(); }, 5000);
+        } finally {
+            inFlight = false;
+            if (dirty && !retryTimer) schedule();
+        }
     }
-    if (typeof window !== 'undefined' && window.addEventListener) {
-        window.addEventListener('pagehide', function () { if (memoryState && !devProfile()) flushRemoteSyncOnUnload(memoryState); });
-    }
-    // O jogo NUNCA espera a rede para iniciar (o boot do Phaser começa na
-    // hora, como sempre). O RemoteSync já começou a buscar o progresso salvo
-    // assim que a página abriu, em paralelo; quando essa busca terminar
-    // (pode ser em instantes, ou só depois de alguns segundos se o backend
-    // no Render "acordar" de um período de inatividade), fundimos o
-    // resultado com o que já estiver em memória/localStorage nesse momento —
-    // sem perder progresso feito enquanto a resposta não chegava.
-    if (typeof window !== 'undefined' && window.__PYQUEST_REMOTE__ && window.__PYQUEST_REMOTE__.ready) {
-        window.__PYQUEST_REMOTE__.ready.then(function (serverState) {
-            if (!serverState || devProfile()) return;
-            const merged = mergeStates(normalize(memoryState || readLocalRaw()), normalize(serverState));
-            memoryState = merged;
-            writeLocalRaw(merged);
-            scheduleRemoteSync(merged);
-        });
-    }
+    window.addEventListener('online', () => { clearTimeout(retryTimer); retryTimer = null; flush(); });
+    window.addEventListener('pagehide', () => {
+        if ((!dirty && !inFlight) || devProfile()) return;
+        const remote = window.__PYQUEST_REMOTE__;
+        if (!remote?.token) return;
+        // keepalive mantém a requisição ativa enquanto a página é descarregada.
+        fetch(`${remote.apiBase}/game-progress`, {
+            method: 'PUT', keepalive: true,
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${remote.token}` },
+            body: JSON.stringify({ state: memoryState })
+        }).catch(() => {});
+    });
+
     window.PersistenceService = {
+        initialize (serverState) { memoryState = normalize(serverState); },
         load () {
-            if (devProfile()) { devState ||= normalize(null); return JSON.parse(JSON.stringify(devState)); }
-            if (memoryState) return JSON.parse(JSON.stringify(memoryState));
-            if (storageFailed || !storageAvailable()) { memoryState = normalize(memoryState); return JSON.parse(JSON.stringify(memoryState)); }
-            const normalized = normalize(readLocalRaw());
-            memoryState = normalized;
-            return JSON.parse(JSON.stringify(normalized));
+            if (devProfile()) { devState ||= normalize(null); return clone(devState); }
+            if (!memoryState) throw new Error('Progresso do banco de dados ainda não carregado.');
+            return clone(memoryState);
         },
         save (state) {
-            const value = normalize(state); value.updatedAt = new Date().toISOString();
-            if (devProfile()) { devState = value; return JSON.parse(JSON.stringify(value)); }
+            const value = normalize(state);
+            value.updatedAt = new Date().toISOString();
+            if (devProfile()) { devState = value; return clone(value); }
+            if (!memoryState) throw new Error('Progresso do banco de dados ainda não carregado.');
             memoryState = value;
-            writeLocalRaw(value);
-            scheduleRemoteSync(value);
-            return JSON.parse(JSON.stringify(value));
+            dirty = true;
+            schedule();
+            return clone(value);
         },
         resetJourney () { return this.save(defaults()); },
-        resetForTests () {
-            devState = null; memoryState = null; storageFailed = false;
-            if (storageAvailable()) { try { window.localStorage.removeItem(window.GAME_CONSTANTS.STORAGE_KEY); } catch (error) { storageFailed = true; } }
-            return this.load();
-        }
+        resetForTests () { devState = normalize(null); return clone(devState); }
     };
 })();

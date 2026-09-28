@@ -32,4 +32,18 @@ const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, parent:'game-container', backgroundColor:'#0c0f15',
     pixelArt:true, roundPixels:true, scale:{ mode:Phaser.Scale.RESIZE }, scene:[Boot, Preloader, MainMenu, Game]
 };
-window.pytonKnightGame = new Phaser.Game(config);
+window.__PYQUEST_REMOTE__.ready.then((serverState) => {
+    window.PersistenceService.initialize(serverState);
+    window.pytonKnightGame = new Phaser.Game(config);
+}).catch((error) => {
+    const host = document.getElementById('interface');
+    host.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0c0f15;color:white;font:16px Arial;text-align:center;padding:24px';
+    const message = document.createElement('div');
+    const text = document.createElement('p');
+    text.textContent = error.message || 'Não foi possível carregar o progresso.';
+    const retry = document.createElement('button');
+    retry.textContent = 'Tentar novamente';
+    retry.onclick = () => window.location.reload();
+    message.append(text, retry);
+    host.appendChild(message);
+});
