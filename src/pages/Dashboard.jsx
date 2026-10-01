@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { quests } from '../data/quests'
 import { buildQuestProgress } from '../data/progress'
@@ -75,7 +76,9 @@ function QuestCard({ id, quest, title, description, level, totalChallenges, comp
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { user, progress, status, logout } = useProgress()
+  const { user, progress, gameProgress, status, logout, loadUser } = useProgress()
+
+  useEffect(() => { loadUser() }, [loadUser])
 
   const loading = status === 'idle' || status === 'loading'
 
@@ -88,7 +91,7 @@ export default function Dashboard() {
   const totalChallenges = quests.reduce((sum, q) => sum + q.totalChallenges, 0)
   const completedChallenges = questProgress.reduce((sum, q) => sum + q.completedChallenges, 0)
   const completedQuests = questProgress.filter((q) => q.isComplete).length
-  const totalXp = questProgress.reduce((sum, q) => sum + q.xp, 0)
+  const totalXp = questProgress.reduce((sum, q) => sum + q.xp, 0) + (gameProgress?.totalXp ?? 0)
 
   return (
     <div className="min-h-screen bg-paper">
@@ -131,7 +134,7 @@ export default function Dashboard() {
               {loading ? 'Carregando...' : 'Sua jornada está só começando'}
             </h1>
             <p className="max-w-[520px] text-[15px] text-[#D9E3DB] drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
-              Complete a Quest 01 para desbloquear a próxima. Cada desafio resolvido soma XP e fica salvo na sua conta.
+              Resolva as atividades do Pyton Knight para ganhar XP. Seus pontos e seu progresso ficam salvos na sua conta.
             </p>
           </div>
 
@@ -141,12 +144,12 @@ export default function Dashboard() {
               <span className="text-[12.5px] text-ink-soft">XP total</span>
             </div>
             <div className="rounded-[14px] border border-line bg-paper-soft p-5">
-              <span className="block font-display text-[26px] font-bold text-ink">{completedQuests}/{quests.length}</span>
-              <span className="text-[12.5px] text-ink-soft">quests concluídas</span>
+              <span className="block font-display text-[26px] font-bold text-ink">{gameProgress?.completedActivities ?? 0}/20</span>
+              <span className="text-[12.5px] text-ink-soft">atividades do jogo</span>
             </div>
             <div className="rounded-[14px] border border-line bg-paper-soft p-5">
-              <span className="block font-display text-[26px] font-bold text-ink">{completedChallenges}/{totalChallenges}</span>
-              <span className="text-[12.5px] text-ink-soft">desafios concluídos</span>
+              <span className="block font-display text-[26px] font-bold text-ink">{gameProgress?.totalXp ?? 0}</span>
+              <span className="text-[12.5px] text-ink-soft">XP no Pyton Knight</span>
             </div>
             <div className="rounded-[14px] border border-line bg-paper-soft p-5">
               <span className="block font-display text-[26px] font-bold text-ink">0</span>
@@ -168,6 +171,7 @@ export default function Dashboard() {
               <h3 className="font-display text-lg font-semibold text-white">Pyton Knight</h3>
               <p className="mt-1 max-w-md text-[13.5px] leading-[1.55] text-[#D9E3DB]">
                 Explore a masmorra do Livro Mágico e programe Guto em Python para resolver as 20 atividades.
+                {` Você concluiu ${gameProgress?.completedActivities ?? 0} de 20 atividades e ganhou ${gameProgress?.totalXp ?? 0} XP.`}
               </p>
             </div>
             <span className="relative z-10 shrink-0 rounded-full bg-forest px-5 py-2.5 text-[13px] font-semibold text-paper transition-colors group-hover:bg-forest-deep">

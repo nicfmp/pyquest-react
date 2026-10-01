@@ -87,6 +87,13 @@
     });
 
     window.PersistenceService = {
+        async flush () {
+            if (devProfile()) return true;
+            while (inFlight) await new Promise(resolve => setTimeout(resolve, 25));
+            clearTimeout(retryTimer); retryTimer = null;
+            await flush();
+            return !dirty;
+        },
         initialize (serverState) { memoryState = normalize(serverState); },
         load () {
             if (devProfile()) { devState ||= normalize(null); return clone(devState); }

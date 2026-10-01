@@ -1,11 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { API_URL } from '../lib/api'
 import { getToken } from '../lib/auth'
 
 const GAME_SRC = '/game/pyton-knight/index.html'
 
 export default function PytonKnight() {
+  const navigate = useNavigate()
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  async function returnToDashboard() {
+    setSaving(true)
+    setSaveError('')
+    try {
+      const persistence = gameFrame.current?.contentWindow?.PersistenceService
+      if (persistence && !(await persistence.flush())) throw new Error('save')
+      navigate('/dashboard')
+    } catch {
+      setSaveError('Não foi possível salvar. Verifique a conexão e tente voltar novamente.')
+    } finally { setSaving(false) }
+  }
   const [loaded, setLoaded] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const gameFrame = useRef(null)
@@ -28,9 +42,9 @@ export default function PytonKnight() {
       {!fullscreen && (
         <nav className="sticky top-0 z-50 border-b border-[#2A332B] bg-ink/90 backdrop-blur-sm">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link to="/dashboard" className="flex items-center gap-2 text-[14px] font-medium text-[#D9E3DB] hover:text-white">
-              ← Voltar ao painel
-            </Link>
+            <button type="button" disabled={saving} onClick={returnToDashboard} className="flex items-center gap-2 text-[14px] font-medium text-[#D9E3DB] hover:text-white">
+              {saving ? 'Salvando progresso…' : '← Voltar ao painel'}
+            </button>
             <span className="font-mono text-[12.5px] text-[#8B9A8E]">Pyton Knight · Dungeon educacional</span>
             <button
               type="button"
@@ -43,6 +57,7 @@ export default function PytonKnight() {
         </nav>
       )}
 
+      {saveError && <p role="alert" className="bg-red-900 px-6 py-3 text-white">{saveError}</p>}
       <main className="relative flex flex-1 items-center justify-center">
         {!loaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink">

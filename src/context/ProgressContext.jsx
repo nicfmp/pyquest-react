@@ -7,6 +7,7 @@ const ProgressContext = createContext(null)
 export function ProgressProvider({ children }) {
   const [user, setUser] = useState(null)
   const [progress, setProgress] = useState(null)
+  const [gameProgress, setGameProgress] = useState(null)
   const [status, setStatus] = useState('idle') // idle | loading | ready | guest
 
   // Busca o usuário e o progresso salvos no backend, a partir do token guardado.
@@ -16,6 +17,7 @@ export function ProgressProvider({ children }) {
     if (!token) {
       setUser(null)
       setProgress(null)
+      setGameProgress(null)
       setStatus('guest')
       return
     }
@@ -30,6 +32,7 @@ export function ProgressProvider({ children }) {
         clearToken()
         setUser(null)
         setProgress(null)
+        setGameProgress(null)
         setStatus('guest')
         return
       }
@@ -37,6 +40,7 @@ export function ProgressProvider({ children }) {
       const data = await res.json()
       setUser(data.usuario)
       setProgress(data.progress)
+      if (data.gameProgress) setGameProgress(data.gameProgress)
       setStatus('ready')
     } catch (err) {
       // Backend fora do ar: não desloga o usuário, só fica sem dados atualizados.
@@ -49,7 +53,7 @@ export function ProgressProvider({ children }) {
   }, [loadUser])
 
   // Avisa o backend que um desafio foi concluído. O backend valida, soma XP
-  // e devolve o progresso atualizado — já persistido no MongoDB.
+  // e devolve o progresso atualizado — já persistido no PostgreSQL.
   async function completeNextChallenge(questId) {
     const token = getToken()
     if (!token) return
@@ -67,6 +71,7 @@ export function ProgressProvider({ children }) {
       if (!res.ok) return
       const data = await res.json()
       setProgress(data.progress)
+      if (data.gameProgress) setGameProgress(data.gameProgress)
     } catch (err) {
       // Sem conexão: o desafio some como "resolvido" na tela, mas o XP
       // só é confirmado na próxima chamada bem-sucedida.
@@ -77,11 +82,12 @@ export function ProgressProvider({ children }) {
     clearToken()
     setUser(null)
     setProgress(null)
+    setGameProgress(null)
     setStatus('guest')
   }
 
   return (
-    <ProgressContext.Provider value={{ user, progress, status, loadUser, completeNextChallenge, logout }}>
+    <ProgressContext.Provider value={{ user, progress, gameProgress, status, loadUser, completeNextChallenge, logout }}>
       {children}
     </ProgressContext.Provider>
   )
